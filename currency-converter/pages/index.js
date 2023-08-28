@@ -1,115 +1,151 @@
+import React, { useState } from 'react';
+import { Container, TextInput, Button, Select } from '@mantine/core'
+import index from "../styles/index.module.css"
+import { fetchData } from '../services/apiService';
+import {countries} from '../model/countries'
 import Head from 'next/head';
-import styles from '../styles/Home.module.css';
+export default function App() {
 
-export default function Home() {
+  let [data] = useState([]);
+  const api_url = "https://api.exchangerate-api.com/v4/latest/"
+
+  let [amount, setAmount] = useState('');
+  let [convert, setConvert] = useState('');
+  let [selectedFrom, setSelectedFrom] = useState('');
+  let [selectedTo, setSelectedTo] = useState('');
+
+
+
+
+  async function currencyService(from) {
+    try {
+      const result = await fetchData(api_url + from);
+      return result;      
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function prepareData(from) {
+
+    try {
+      data = await currencyService(from);  
+      data = data['rates']
+    } catch (error) {
+      console.error("An error occurred:", error);
+    }
+  }
+  
+
+
+  
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    prepareData(selectedFrom).then( () => {
+
+      const res = Object.fromEntries(
+        Object.entries(data).filter(([key, value]) => key == selectedTo)
+      );
+      
+
+      convert = amount * res[selectedTo];
+      setConvert(convert)
+    }
+    )
+
+    
+    
+  };
+  const handleReset = (e) => {
+    setAmount('')
+    setConvert('')
+    setSelectedFrom(null)
+    setSelectedTo(null)
+  };
+
+  const handleSelectChangeFrom = (value) => {
+    setSelectedFrom(value); 
+  };
+
+  const handleSelectChangeTo = (value) => {
+    setSelectedTo(value); 
+  };
+
+
+
+
   return (
-    <div className={styles.container}>
+    
+    <>
       <Head>
-        <title>Create Next App</title>
+        <title>Currency Converter App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Container size="xs">
 
-      <main>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        <h1>Currency Converter</h1>
+        <form onSubmit={handleSubmit} onReset={handleReset}>
+          <div className={index.container}>
 
-        <p className={styles.description}>
-          Get started by editing <code>pages/index.js</code>
-        </p>
+            <TextInput
+              className={index.input}
+              id='amountText'
+              label="Amount"
+              placeholder="Enter the amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              />
+            <Select
+              className={index.select}
+              label="From"
+              placeholder="Pick one"
+              value={selectedFrom}
+              onChange={handleSelectChangeFrom}
+              data={countries}
+              required
+              />
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className={styles.logo} />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        footer img {
-          margin-left: 0.5rem;
-        }
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          text-decoration: none;
-          color: inherit;
-        }
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
-    </div>
-  )
+          </div>
+          <div className={index.container}>
+            <TextInput
+              className={index.input}
+              label="Convert"
+              placeholder="Result"
+              value={convert}
+              readOnly
+              />
+            <Select
+              className={index.select}
+              label="To"
+              placeholder="Pick one"
+              value={selectedTo}
+              onChange={handleSelectChangeTo}
+              data={countries}
+              required
+              />
+          </div>
+          <Button
+           className={index.button}
+           type="submit" 
+           variant="filled" 
+           color="blue">
+            Submit
+          </Button>
+          <Button
+           className={index.button}
+           type="reset" 
+           variant="filled" 
+           color="blue">
+            Reset
+          </Button>
+        </form>
+      </Container>
+    </>
+  );
+  
 }
+
+
